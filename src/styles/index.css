@@ -1,0 +1,51 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #061f18;
+  --panel: #0f2f25;
+  --line: #1f4f3f;
+  --brand: #22c55e;
+  --accent: #fbbf24;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+body {
+  font-family: 'Manrope', sans-serif;
+  background: radial-gradient(circle at top right, #124635 0%, var(--bg) 40%);
+  color: #e8fff2;
+}
+
+.bg-app {
+  background: radial-gradient(circle at top right, #124635 0%, var(--bg) 40%);
+}
+
+.card {
+  @apply rounded-xl2 border border-line/60 bg-panel/85 shadow-soft backdrop-blur;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-bold transition active:scale-[0.98];
+}
+
+.btn-primary {
+  @apply btn bg-brand text-emerald-950 hover:bg-emerald-300;
+}
+
+.btn-ghost {
+  @apply btn border border-line bg-panel/60 hover:bg-panel;
+}
+
+.input {
+  @apply w-full rounded-xl border border-line bg-[#0b271f] px-3 py-2 text-sm outline-none ring-0 placeholder:text-slate-400 focus:border-brand;
+}
+
+.badge {
+  @apply rounded-full border border-line bg-[#0d372a] px-2.5 py-1 text-xs;
+}

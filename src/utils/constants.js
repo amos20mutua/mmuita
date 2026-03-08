@@ -1,0 +1,1 @@
+export const PUBLIC_TRACKING_CODE = 'EFK240901'
