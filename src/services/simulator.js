@@ -2,7 +2,7 @@
 
 const shift = (n, i) => n + i * 0.0007
 
-export const createSimulation = ({ order, bike, riderId, onTick }) => {
+export const createSimulation = ({ order, bike, riderId, riderProfileId, onTick }) => {
   let step = 0
   const statuses = ['confirmed', 'rider_assigned', 'picked_up', 'in_transit', 'delivered']
 
@@ -15,7 +15,7 @@ export const createSimulation = ({ order, bike, riderId, onTick }) => {
 
     const status = statuses[Math.min(step - 1, statuses.length - 1)]
     await api.updateOrder(order.id, { status })
-    await api.addStatusHistory({ order_id: order.id, status, note: 'Simulation tick', changed_by: riderId })
+    await api.addStatusHistory({ order_id: order.id, status, note: 'Simulation tick', changed_by: riderProfileId || null })
     onTick?.(status)
 
     if (status === 'delivered') clearInterval(timer)

@@ -1,6 +1,7 @@
-﻿export const getGoogleMapsKey = () => {
-  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
-  return /^AIza[\w-]{20,}$/.test(key) ? key : ''
+export const getMapboxToken = () => {
+  const token = (import.meta.env.VITE_MAPBOX_TOKEN || '').trim()
+  if (!token || token.includes('YOUR_')) return ''
+  return token
 }
 
-export const hasValidGoogleMapsKey = () => Boolean(getGoogleMapsKey())
+export const hasValidMapboxToken = () => Boolean(getMapboxToken())

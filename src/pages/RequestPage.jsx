@@ -1,15 +1,17 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DeliveryRequestForm from '../components/DeliveryRequestForm'
 import FareEstimator from '../components/FareEstimator'
-import MapView from '../components/MapView'
+import LazyMapView from '../components/LazyMapView'
 import Toast from '../components/common/Toast'
 import { useAuth } from '../hooks/useAuth'
 import { api } from '../services/api'
 import { estimateFare } from '../services/pricing'
 import { estimateRoute } from '../services/routing'
-import { hasValidGoogleMapsKey } from '../utils/mapsKey'
-import { vehicleById } from '../utils/vehicles'
+import { paymentService } from '../services/payment'
+import { notificationService } from '../services/notification'
+import { geocodeOne } from '../services/geocoding'
+import { hasValidMapboxToken } from '../utils/mapsKey'
 
 const code = () => `EFK${Date.now().toString().slice(-6)}`
 
@@ -17,6 +19,7 @@ export default function RequestPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [services, setServices] = useState([])
+  const [vehicleTypes, setVehicleTypes] = useState([])
   const [zones, setZones] = useState([])
   const [estimate, setEstimate] = useState(null)
   const [previewPoints, setPreviewPoints] = useState({ pickup: null, dropoff: null })
@@ -26,8 +29,9 @@ export default function RequestPage() {
 
   useEffect(() => {
     ;(async () => {
-      const [{ data: s }, { data: z }] = await Promise.all([api.services(), api.zones()])
+      const [{ data: s }, { data: vt }, { data: z }] = await Promise.all([api.services(), api.vehicleTypes(), api.zones()])
       setServices(s || [])
+      setVehicleTypes(vt || [])
       setZones(z || [])
     })()
   }, [])
@@ -46,8 +50,18 @@ export default function RequestPage() {
       text: form.dropoff_address_text
     }
 
+    if (!pickup.lat && form.pickup_address_text) {
+      const guess = await geocodeOne(form.pickup_address_text)
+      if (guess) Object.assign(pickup, { lat: Number(guess.lat), lng: Number(guess.lng), placeId: guess.id })
+    }
+
+    if (!dropoff.lat && form.dropoff_address_text) {
+      const guess = await geocodeOne(form.dropoff_address_text)
+      if (guess) Object.assign(dropoff, { lat: Number(guess.lat), lng: Number(guess.lng), placeId: guess.id })
+    }
+
     if (!pickup.lat || !dropoff.lat) {
-      setToast('Select pickup and dropoff from suggestions first.')
+      setToast('Enter valid pickup and dropoff locations.')
       return null
     }
 
@@ -55,25 +69,24 @@ export default function RequestPage() {
 
     const route = await estimateRoute({ pickup, dropoff, departureTime: form.desired_delivery_time })
     const service = services.find((s) => s.id === form.service_id) || services[0]
-    const { data: srules } = await api.pricingRules(service?.id)
-    const vehicle = vehicleById(form.vehicle_type)
+    const vehicle = vehicleTypes.find((v) => v.id === form.vehicle_type)
+    const { data: pConfigs } = await api.pricingRules(service?.id, form.vehicle_type)
+    const pricingConfig = pConfigs?.[0] || null
     const options = (route?.alternatives?.length ? route.alternatives : [route]).map((r, idx) => {
       const calc = estimateFare({
         distanceKm: Number(r.distanceKm || 0),
-        service,
+        pricingConfig,
         urgency: form.urgency,
         weightCategory: form.package_weight_category,
-        vehicle,
         pickup,
         dropoff,
-        zones,
-        rules: srules || []
+        zones
       })
       return {
         ...r,
         id: r.id || `route-${idx + 1}`,
         calc,
-        vehicleName: vehicle.name,
+        vehicleName: vehicle?.name || 'Vehicle',
         total: calc.total
       }
     })
@@ -102,6 +115,7 @@ export default function RequestPage() {
       tracking_code: code(),
       customer_id: user.id,
       service_id: form.service_id,
+      vehicle_type_id: form.vehicle_type,
       status: 'pending',
       pickup_address_text: form.pickup_address_text,
       pickup_latitude: result.pickup.lat,
@@ -125,19 +139,22 @@ export default function RequestPage() {
 
     const { data, error } = await api.createOrder(payload)
     if (error) return setToast(error.message)
+    const payment = await paymentService.initializePaymentIntent({ orderId: data.id, amount: payload.final_price })
+    if (payment?.payment_reference) await api.updateOrder(data.id, { payment_reference: payment.payment_reference })
     await api.addStatusHistory({ order_id: data.id, status: 'pending', note: 'Order created', changed_by: user.id })
+    await notificationService.sendOrderCreated({ order: data })
     navigate(`/track/${data.tracking_code}`)
   }
 
-  const placeReady = hasValidGoogleMapsKey()
+  const placeReady = hasValidMapboxToken()
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
       <section className="card p-4">
         <h1 className="text-xl font-extrabold">Request Delivery</h1>
         <p className="mb-4 text-sm text-slate-300">Choose places, delivery time, and vehicle type.</p>
-        <DeliveryRequestForm services={services} onPreview={makeEstimate} onSubmit={submit} canSubmit={Boolean(user)} placesReady={placeReady} />
-        {!user && <p className="mt-3 text-xs text-amber-300">You can preview now. Login before final confirmation.</p>}
+        <DeliveryRequestForm services={services} vehicleTypes={vehicleTypes} onPreview={makeEstimate} onSubmit={submit} canSubmit={Boolean(user)} placesReady={placeReady} />
+        {!user && <p className="mt-3 text-xs text-amber-300">You can plan your delivery now. Sign in to place the request.</p>}
       </section>
       <div className="space-y-4">
         <FareEstimator estimate={estimate} />
@@ -157,15 +174,15 @@ export default function RequestPage() {
                   })
                 }}
               >
-                <div className="flex items-center justify-between">
-                  <span>{r.summary}</span>
-                  <span>{r.durationInTrafficMinutes} min | KES {r.total.toFixed(0)}</span>
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="truncate">{r.summary || 'Route option'}</span>
+                  <span className="text-xs text-slate-300 sm:text-sm">{r.durationInTrafficMinutes} min | KES {r.total.toFixed(0)}</span>
                 </div>
               </button>
             ))}
           </div>
         )}
-        <MapView
+        <LazyMapView
           pickup={previewPoints.pickup}
           dropoff={previewPoints.dropoff}
           routes={routes}
@@ -176,3 +193,5 @@ export default function RequestPage() {
     </div>
   )
 }
+
+

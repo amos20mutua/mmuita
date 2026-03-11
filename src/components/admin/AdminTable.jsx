@@ -1,4 +1,4 @@
-﻿export default function AdminTable({ columns, rows = [], empty = 'No data' }) {
+export default function AdminTable({ columns, rows = [], empty = 'Everything is clear right now.' }) {
   if (!rows.length) return <div className="card p-4 text-sm text-slate-300">{empty}</div>
 
   return (
@@ -18,3 +18,4 @@
     </div>
   )
 }
+

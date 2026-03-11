@@ -1,102 +1,83 @@
 ﻿# Efikishe App
 
-Production-focused electric delivery platform for Nairobi.
+Production-ready electric delivery platform for Nairobi.
 
 ## Stack
 - Vite + React (JavaScript)
 - Tailwind CSS
 - React Router
-- Supabase (Auth, Postgres, Realtime, Storage-ready)
-- Google Maps (Places + Directions + Traffic)
+- Supabase (Auth, Postgres, Realtime, Storage)
+- Mapbox (Maps + Geocoding + Routing)
 - Netlify deployment config
-
-## Folder Structure
-```txt
-.
-├─ netlify/
-│  └─ functions/
-│     └─ health.js
-├─ public/
-├─ src/
-│  ├─ components/
-│  │  ├─ admin/
-│  │  └─ common/
-│  ├─ hooks/
-│  ├─ layouts/
-│  ├─ lib/
-│  ├─ pages/
-│  ├─ services/
-│  ├─ styles/
-│  └─ utils/
-├─ supabase/
-│  ├─ schema.sql
-│  └─ seed.sql
-├─ .env.example
-├─ index.html
-├─ netlify.toml
-├─ package.json
-└─ vite.config.js
-```
-
-## Routes
-- `/` landing
-- `/request` request flow + fare estimate + map preview
-- `/track/:trackingCode` realtime tracking
-- `/login` customer auth + password reset
-- `/dashboard` customer orders/history
-- `/admin` admin control center
 
 ## Setup
 1. Install dependencies:
 ```bash
 npm install
 ```
-2. Create `.env` from `.env.example` and set Supabase keys.
-3. In Supabase SQL editor, run:
-   - `supabase/schema.sql`
-   - `supabase/seed.sql`
-4. Enable Realtime for `orders`, `order_status_history`, and `rider_locations` tables.
-5. Run locally:
-```bash
-npm run dev
-```
-
-## Run Without Database (Demo Mode)
-- Leave `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` unset.
-- The app auto-starts with local mock data and demo auth.
-- Use `/login` to switch demo roles (customer/admin/rider).
-- Realtime uses lightweight polling in demo mode.
-
-## Supabase Notes
-- Public signup is customer-only (`role=customer`).
-- Rider signup is hidden; riders are admin-provisioned.
-- Roles are stored in `profiles` and enforced with RLS.
-- Realtime updates:
-  - Tracking page subscribes to `orders`, `order_status_history`, `rider_locations`.
-  - Admin live map has rider simulation for testing.
-
-## Admin Simulation Mode
-In `/admin` -> `live map`, click `Run Rider Simulation`.
-- Writes location updates into `rider_locations`
-- Mirrors latest position to `bikes`
-- Progresses order status until `delivered`
-
-## Netlify Deployment
-- `netlify.toml` already configured.
-- Build: `npm run build`
-- Publish dir: `dist`
-- SPA fallback redirect to `index.html`
-
-## Environment Variables
+2. Copy `.env.example` to `.env` and set:
 ```env
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
-VITE_GOOGLE_MAPS_API_KEY=...
+VITE_MAPBOX_TOKEN=...
+# optional (server/functions only, never in frontend code):
+SUPABASE_SERVICE_ROLE_KEY=...
 ```
+3. In Supabase SQL editor, run:
+   - `supabase/schema_v2.sql`
+   - `supabase/seed_v2.sql`
+4. Enable Realtime on:
+   - `orders`
+   - `order_status_history`
+   - `rider_locations`
+5. Start app:
+```bash
+npm run dev
+```
+6. If you changed `.env`, stop and restart the dev server so Vite reloads env vars.
 
-## Architecture Summary
-- Thin route pages, shared logic in `services/` and `utils/`
-- `useAuth` centralizes session + profile role handling
-- `api.js` contains Supabase queries/mutations
-- `pricing.js` computes fare from admin-configurable service/rule/zone data
-- `MapView` renders Google map traffic layer + route alternatives + markers
+## Routes
+- `/` Landing
+- `/request` Request flow + fare estimate + map route preview
+- `/track/:trackingCode` Live tracking
+- `/login` Auth
+- `/dashboard` Customer dashboard
+- `/admin` Admin operations panel
+
+## Production Notes
+- Public signup is customer-only.
+- Rider creation is admin-only.
+- Payments are placeholder-ready (`payment_status`, `payment_reference`, `src/services/payment.js`).
+- Notification hooks are placeholder-ready (`src/services/notification.js`).
+- If Mapbox token is missing, map blocks degrade gracefully without breaking order draft flow.
+- If Supabase env vars are missing, app runs in local preview mode using in-memory mock data.
+
+## Database Coverage (v2)
+`schema_v2.sql` includes:
+- profiles
+- addresses
+- services
+- vehicle_types
+- pricing_configs
+- zones
+- riders
+- bikes
+- orders
+- order_status_history
+- rider_locations
+- notifications
+- app_settings
+- homepage_content
+- admin_audit_logs
+
+Also includes:
+- indexes
+- updated_at triggers
+- auth profile bootstrap trigger
+- RLS policies by role (customer/admin/rider)
+- safe public tracking RPC (`get_public_order_tracking`)
+
+## Netlify
+- `netlify.toml` already includes SPA fallback.
+- Build command: `npm run build`
+- Publish directory: `dist`

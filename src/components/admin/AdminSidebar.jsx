@@ -2,16 +2,19 @@
   'overview',
   'orders',
   'riders',
+  'fleet',
   'live_map',
   'services',
+  'vehicle_types',
   'zones',
   'pricing',
   'content',
-  'theme',
+  'settings',
   'customers',
+  'support',
   'analytics',
   'notifications',
-  'profile'
+  'logs'
 ]
 
 export default function AdminSidebar({ active, setActive }) {

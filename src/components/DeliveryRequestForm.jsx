@@ -1,12 +1,11 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import PlaceInput from './PlaceInput'
-import { vehicleOptions } from '../utils/vehicles'
 
 const packageTypes = ['Parcel', 'Food', 'Documents', 'Retail']
 const sizeCategories = ['small', 'medium', 'large']
 const urgencies = ['standard', 'priority', 'express']
 
-export default function DeliveryRequestForm({ services, onPreview, onSubmit, canSubmit, placesReady }) {
+export default function DeliveryRequestForm({ services, vehicleTypes, onPreview, onSubmit, canSubmit, placesReady }) {
   const [form, setForm] = useState({
     pickup_address_text: '',
     pickup_place_id: '',
@@ -18,7 +17,7 @@ export default function DeliveryRequestForm({ services, onPreview, onSubmit, can
     dropoff_longitude: null,
     desired_delivery_time: '',
     service_id: services[0]?.id || '',
-    vehicle_type: vehicleOptions[0].id,
+    vehicle_type: vehicleTypes[0]?.id || '',
     package_type: packageTypes[0],
     package_weight_category: 'small',
     urgency: 'standard',
@@ -30,12 +29,16 @@ export default function DeliveryRequestForm({ services, onPreview, onSubmit, can
   })
 
   useEffect(() => {
-    if (!form.service_id && services[0]?.id) setForm((s) => ({ ...s, service_id: services[0].id }))
-  }, [services, form.service_id])
+    setForm((s) => ({
+      ...s,
+      service_id: s.service_id || services[0]?.id || '',
+      vehicle_type: s.vehicle_type || vehicleTypes[0]?.id || ''
+    }))
+  }, [services, vehicleTypes])
 
   const update = (e) => setForm((s) => ({ ...s, [e.target.name]: e.target.value }))
 
-  const selectedVehicle = useMemo(() => vehicleOptions.find((v) => v.id === form.vehicle_type), [form.vehicle_type])
+  const selectedVehicle = useMemo(() => vehicleTypes.find((v) => v.id === form.vehicle_type), [form.vehicle_type, vehicleTypes])
 
   return (
     <form className="space-y-3" onSubmit={(e) => onSubmit(e, form)}>
@@ -53,7 +56,7 @@ export default function DeliveryRequestForm({ services, onPreview, onSubmit, can
               pickup_longitude: p.lng
             }))
           }
-          disabled={!placesReady}
+          disabled={false}
         />
         <PlaceInput
           label="Dropoff"
@@ -68,7 +71,7 @@ export default function DeliveryRequestForm({ services, onPreview, onSubmit, can
               dropoff_longitude: p.lng
             }))
           }
-          disabled={!placesReady}
+          disabled={false}
         />
       </div>
 
@@ -82,7 +85,7 @@ export default function DeliveryRequestForm({ services, onPreview, onSubmit, can
       <input className="input" type="datetime-local" name="desired_delivery_time" value={form.desired_delivery_time} onChange={update} />
 
       <div className="grid gap-2 md:grid-cols-3">
-        {vehicleOptions.map((v) => (
+        {vehicleTypes.map((v) => (
           <button
             key={v.id}
             type="button"
@@ -90,12 +93,12 @@ export default function DeliveryRequestForm({ services, onPreview, onSubmit, can
             className={`rounded-xl border p-3 text-left ${form.vehicle_type === v.id ? 'border-brand bg-brand/10' : 'border-line bg-[#0b271f]'}`}
           >
             <p className="text-sm font-bold">{v.name}</p>
-            <p className="text-xs text-slate-300">{v.fit}</p>
+            <p className="text-xs text-slate-300">{v.description}</p>
           </button>
         ))}
       </div>
 
-      <p className="text-xs text-slate-400">Selected: {selectedVehicle?.name} ({selectedVehicle?.fit})</p>
+      <p className="text-xs text-slate-400">Selected: {selectedVehicle?.name || 'Choose vehicle'}</p>
 
       <div className="grid gap-3 md:grid-cols-2">
         <input className="input" name="sender_name" value={form.sender_name} onChange={update} placeholder="Sender name" required />
@@ -112,7 +115,7 @@ export default function DeliveryRequestForm({ services, onPreview, onSubmit, can
         <button type="button" className="btn-ghost" onClick={() => onPreview(form)}>Get Live Estimate</button>
         <button type="submit" className="btn-primary" disabled={!canSubmit}>{canSubmit ? 'Confirm Request' : 'Login To Submit'}</button>
       </div>
-      {!placesReady && <p className="text-xs text-amber-300">Google Maps key missing. Using basic text-only fallback.</p>}
+      {!placesReady && <p className="text-xs text-amber-300">Mapbox limited. Using backup place search/map mode.</p>}
     </form>
   )
 }

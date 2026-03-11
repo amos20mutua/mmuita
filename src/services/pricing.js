@@ -2,48 +2,40 @@
 
 export const estimateFare = ({
   distanceKm,
-  service,
+  pricingConfig,
   urgency,
   weightCategory,
-  vehicle,
   pickup,
   dropoff,
-  zones = [],
-  rules = []
+  zones = []
 }) => {
-  const weightKey = weightCategory === 'small' ? 'light' : weightCategory === 'large' ? 'heavy' : weightCategory
-  const base = Number(service?.base_fare || 0)
-  const distance = Number(distanceKm || 0) * Number(service?.per_km_rate || 0)
+  const cfg = pricingConfig || {}
+  const weightKey = weightCategory === 'small' ? 'small' : weightCategory === 'large' ? 'large' : weightCategory
+  const base = Number(cfg.base_fare || 0)
+  const distance = Number(distanceKm || 0) * Number(cfg.per_km_rate || 0)
 
-  const urgencyRule = service?.urgency_surcharge_rules?.[urgency] || 0
-  const weightRule = service?.weight_surcharge_rules?.[weightKey] || 0
+  const urgencyRule = cfg.urgency_rules_json?.[urgency] || 0
+  const weightRule = cfg.weight_rules_json?.[weightKey] || 0
   const zone = zoneSurcharge(pickup, dropoff, zones)
+  const zoneRule = Number(cfg.zone_rules_json?.default || 0)
+  const timeFee = Number(cfg.per_minute_rate || 0) * roughDurationMinutes(distanceKm)
 
-  const custom = rules
-    .filter((r) => r.active)
-    .reduce((sum, rule) => {
-      if (rule.rule_type === 'flat') return sum + Number(rule.rule_config_json?.amount || 0)
-      if (rule.rule_type === 'percent') return sum + (base + distance) * Number(rule.rule_config_json?.percent || 0)
-      return sum
-    }, 0)
-
-  const subtotal = base + distance
-  const vehicleExtra = Number(vehicle?.extra || 0)
-  const vehicleMultiplier = Number(vehicle?.multiplier || 1)
-  const total = (subtotal + urgencyRule + weightRule + zone + custom + vehicleExtra) * vehicleMultiplier
+  const subtotal = base + distance + timeFee
+  const total = subtotal + urgencyRule + weightRule + zone + zoneRule
 
   return {
     distanceKm: Number(distanceKm.toFixed(2)),
-    etaMinutes: roughDurationMinutes(distanceKm) + Number(vehicle?.etaBiasMin || 0),
+    etaMinutes: roughDurationMinutes(distanceKm),
     breakdown: {
       base,
       distance,
+      timeFee,
       urgency: urgencyRule,
       weight: weightRule,
       zone,
-      custom,
-      vehicleExtra,
-      vehicleMultiplier
+      custom: zoneRule,
+      vehicleExtra: 0,
+      vehicleMultiplier: 1
     },
     total: Number(total.toFixed(2))
   }

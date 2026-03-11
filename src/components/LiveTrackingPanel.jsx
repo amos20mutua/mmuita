@@ -10,7 +10,7 @@ export default function LiveTrackingPanel({ order }) {
       </div>
       <div className="mt-4 grid gap-3 text-sm text-slate-300 md:grid-cols-3">
         <div><p>ETA</p><p className="font-bold text-white">{order.estimated_duration_minutes || '--'} min</p></div>
-        <div><p>Rider</p><p className="font-bold text-white">{order.profiles?.full_name || 'Unassigned'}</p></div>
+        <div><p>Rider</p><p className="font-bold text-white">{order.riders?.display_name || order.profiles?.full_name || 'Unassigned'}</p></div>
         <div><p>Bike</p><p className="font-bold text-white">{order.bikes?.bike_code || '--'}</p></div>
       </div>
     </section>

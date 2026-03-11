@@ -1,12 +1,13 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap');
+﻿@import 'mapbox-gl/dist/mapbox-gl.css';
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --bg: #061f18;
-  --panel: #0f2f25;
-  --line: #1f4f3f;
+  --bg: #07261d;
+  --panel: #113428;
+  --line: #2b5c4a;
   --brand: #22c55e;
   --accent: #fbbf24;
 }
@@ -18,12 +19,25 @@
 
 body {
   font-family: 'Manrope', sans-serif;
-  background: radial-gradient(circle at top right, #124635 0%, var(--bg) 40%);
+  background: radial-gradient(circle at top right, #1f6a50 0%, var(--bg) 45%);
   color: #e8fff2;
+  overflow-x: hidden;
+  min-width: 320px;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
 
 .bg-app {
-  background: radial-gradient(circle at top right, #124635 0%, var(--bg) 40%);
+  background: radial-gradient(circle at top right, #1f6a50 0%, var(--bg) 45%);
 }
 
 .card {
@@ -49,3 +63,247 @@ body {
 .badge {
   @apply rounded-full border border-line bg-[#0d372a] px-2.5 py-1 text-xs;
 }
+
+.sticker-marquee-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.sticker-marquee-wrap::before,
+.sticker-marquee-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sticker-marquee-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(17, 52, 40, 0.95), rgba(17, 52, 40, 0));
+}
+
+.sticker-marquee-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(17, 52, 40, 0.95), rgba(17, 52, 40, 0));
+}
+
+.sticker-marquee-track {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: max-content;
+  animation: sticker-scroll 28s linear infinite;
+  padding-right: 0.5rem;
+}
+
+.sticker-chip {
+  white-space: nowrap;
+}
+
+@keyframes sticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticker-marquee-track {
+    animation: none;
+  }
+}
+
+.service-visual {
+  width: 118px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  border: 1px solid rgba(43, 92, 74, 0.9);
+  background: linear-gradient(145deg, rgba(19, 59, 46, 0.75), rgba(10, 31, 25, 0.85));
+  padding: 4px;
+}
+
+.service-visual-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.service-visual .bike-shift {
+  animation: bike-float 2.6s ease-in-out infinite;
+}
+
+.service-visual .swingarm,
+.service-visual .fork,
+.service-visual .handlebar,
+.service-visual .exhaust {
+  fill: none;
+  stroke: #7ee3a8;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.service-visual .tank,
+.service-visual .seat,
+.service-visual .engine,
+.service-visual .rider-head,
+.service-visual .rider-body {
+  fill: #7ee3a8;
+}
+
+.service-visual .headlight {
+  fill: #fef3c7;
+}
+
+.service-visual .tire {
+  fill: #06241b;
+  stroke: #8be7b0;
+  stroke-width: 2.5;
+}
+
+.service-visual .rim {
+  fill: none;
+  stroke: #94f0b8;
+  stroke-width: 2.2;
+  stroke-dasharray: 3.5 2.5;
+  transform-origin: center;
+  animation: wheel-rotate 1.3s linear infinite;
+}
+
+.service-visual .road {
+  stroke: rgba(126, 227, 168, 0.55);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.service-visual .road-dash {
+  stroke: rgba(165, 240, 196, 0.8);
+  stroke-width: 2;
+  stroke-linecap: round;
+  animation: road-dash 0.9s linear infinite;
+}
+
+.service-visual .speed-line,
+.service-visual .food-steam {
+  fill: none;
+  stroke: #a6f5c5;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+}
+
+.service-visual .rack {
+  fill: #5fd696;
+}
+
+.service-visual .topbox,
+.service-visual .foodbag,
+.service-visual .bulkbox {
+  display: none;
+  animation: cargo-bob 2.1s ease-in-out infinite;
+}
+
+.service-visual.parcel .topbox,
+.service-visual.scheduled .topbox {
+  display: block;
+  fill: #f6d57e;
+}
+
+.service-visual.food .foodbag {
+  display: block;
+  fill: #ffd89a;
+  animation: cargo-bob 1.8s ease-in-out infinite;
+}
+
+.service-visual.bulk .bulkbox {
+  display: block;
+  fill: #f6d57e;
+}
+
+.service-visual.food .food-steam.one,
+.service-visual.food .food-steam.two {
+  opacity: 1;
+  animation: steam-rise 1.6s ease-in-out infinite;
+}
+
+.service-visual.food .food-steam.two {
+  animation-delay: 0.35s;
+}
+
+.service-visual.express .speed-line.one,
+.service-visual.express .speed-line.two {
+  opacity: 1;
+  animation: speed-pulse 0.95s linear infinite;
+}
+
+.service-visual.express .speed-line.two {
+  animation-delay: 0.2s;
+}
+
+.service-visual.scheduled .road {
+  stroke-dasharray: 8 6;
+  animation: schedule-dash 1.8s linear infinite;
+}
+
+@keyframes wheel-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes cargo-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+
+@keyframes steam-rise {
+  0% { transform: translateY(3px); opacity: 0.15; }
+  50% { opacity: 0.55; }
+  100% { transform: translateY(-3px); opacity: 0.1; }
+}
+
+@keyframes speed-pulse {
+  0%, 100% { transform: translateX(0); opacity: 0.25; }
+  50% { transform: translateX(4px); opacity: 0.8; }
+}
+
+@keyframes road-dash {
+  from { transform: translateX(0); opacity: 0.8; }
+  to { transform: translateX(-18px); opacity: 0.15; }
+}
+
+@keyframes schedule-dash {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -28; }
+}
+
+@keyframes bike-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.6px); }
+}
+
+@media (max-width: 420px) {
+  .service-visual {
+    width: 104px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .service-visual .bike-shift,
+  .service-visual .rim,
+  .service-visual .topbox,
+  .service-visual .foodbag,
+  .service-visual .bulkbox,
+  .service-visual .food-steam,
+  .service-visual .speed-line,
+  .service-visual .road,
+  .service-visual .road-dash {
+    animation: none;
+  }
+}
+

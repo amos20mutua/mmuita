@@ -1,65 +1,56 @@
-﻿import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import LoadingCard from '../components/common/LoadingCard'
+import { api } from '../services/api'
+import { defaultPublicPages } from '../utils/publicPages'
 
-const pages = {
-  promotions: {
-    title: 'Promotions',
-    intro: 'Automatic savings for loyal and high-frequency delivery customers.',
-    points: [
-      'First request: 15% off up to KES 300.',
-      '5+ deliveries in 7 days: 8% loyalty discount auto-applied.',
-      'Business accounts: volume pricing from 50 monthly deliveries.',
-      'Referral bonus: KES 200 credit after the first successful referral delivery.'
-    ],
-    footer: 'Offer terms are enforced at checkout and visible before you confirm a request.'
-  },
-  support: {
-    title: 'Support',
-    intro: 'Fast human support for urgent deliveries, payment issues, and account help.',
-    points: [
-      'Call: +254 700 111 222',
-      'WhatsApp: +254 700 111 222',
-      'Email: support@efikishe.com',
-      'Hours: 06:00 - 22:00 EAT, 7 days a week'
-    ],
-    footer: 'For active deliveries, include your tracking code for priority handling.'
-  },
-  about: {
-    title: 'About Efikishe',
-    intro: 'Efikishe is a Nairobi-built electric logistics company focused on speed, reliability, and cleaner cities.',
-    points: [
-      '100% electric-first dispatch model for urban delivery.',
-      'Coverage across Nairobi CBD, Westlands, Kilimani, Parklands, and surrounding areas.',
-      'Rider-first operations with safety, fair dispatch, and route intelligence.',
-      'Mission: make everyday delivery cleaner, faster, and dependable for homes and businesses.'
-    ],
-    footer: 'Head Office: Nairobi, Kenya | Partnerships: partners@efikishe.com'
-  },
-  payments: {
-    title: 'Payments',
-    intro: 'Flexible payment methods for individual and business customers.',
-    points: [
-      'M-Pesa STK Push (default).',
-      'Visa and Mastercard (secure checkout).',
-      'Business account invoicing for approved monthly clients.',
-      'Instant receipt issued after successful payment.'
-    ],
-    footer: 'Payment support: payments@efikishe.com | Disputes resolved within 24 hours.'
-  }
+const tabs = {
+  promotions: { cta: '/request', ctaText: 'Unlock Savings' },
+  support: { cta: '/track/EFK240901', ctaText: 'Track with Code' },
+  about: { cta: '/request', ctaText: 'Book Green Delivery' },
+  payments: { cta: '/request', ctaText: 'Pay on Request' }
 }
 
 export default function UtilityPage({ type = 'support' }) {
-  const p = pages[type] || pages.support
+  const [pages, setPages] = useState(defaultPublicPages)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    ;(async () => {
+      const { data } = await api.publicPages()
+      if (data) setPages(data)
+      setLoading(false)
+    })()
+  }, [])
+
+  const p = useMemo(() => pages[type] || pages.support || defaultPublicPages.support, [pages, type])
+  const routeMeta = tabs[type] || { cta: '/', ctaText: 'Back Home' }
+
+  if (loading) return <LoadingCard text="Preparing page..." />
+
   return (
-    <section className="mx-auto max-w-2xl card p-6">
-      <h1 className="text-2xl font-extrabold">{p.title}</h1>
-      <p className="mt-2 text-sm text-slate-300">{p.intro}</p>
-      <div className="mt-4 rounded-xl border border-line bg-[#0a291f] p-4">
-        <ul className="space-y-2 text-sm text-slate-200">
-          {p.points.map((line) => <li key={line}>{line}</li>)}
-        </ul>
+    <section className="mx-auto max-w-3xl space-y-4">
+      <div className="card p-6 md:p-8">
+        <p className="text-xs uppercase tracking-[0.18em] text-brand">Efikishe</p>
+        <h1 className="mt-2 text-2xl font-extrabold md:text-3xl">{p.title}</h1>
+        <p className="mt-2 max-w-2xl text-sm text-slate-200 md:text-base">{p.intro}</p>
       </div>
-      <p className="mt-4 text-xs text-slate-400">{p.footer}</p>
-      <Link to="/" className="btn-primary mt-6">Back Home</Link>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {(p.points || []).map((line) => (
+          <article key={line} className="card p-4">
+            <p className="text-sm text-slate-100">{line}</p>
+          </article>
+        ))}
+      </div>
+
+      <div className="card p-5">
+        <p className="text-sm text-slate-200">{p.footer}</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link to={routeMeta.cta} className="btn-primary">{routeMeta.ctaText}</Link>
+          <Link to="/" className="btn-ghost">Back Home</Link>
+        </div>
+      </div>
     </section>
   )
 }

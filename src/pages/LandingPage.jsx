@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Hero from '../components/Hero'
 import ServiceCards from '../components/ServiceCards'
 import LoadingCard from '../components/common/LoadingCard'
@@ -19,16 +19,32 @@ export default function LandingPage() {
     })()
   }, [])
 
+  const stickers = [
+    '100% Electric Dispatch',
+    'Lower Daily Delivery Cost',
+    'Cleaner Urban Air',
+    'Fast Nairobi Coverage',
+    'Low-Noise Urban Movement',
+    'Reliable Same-Day Routing'
+  ]
+
   return (
     <div className="space-y-5">
       <Hero content={homepage} />
+
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">{homepage?.services_section_title || 'Services'}</h2>
+        <h2 className="text-lg font-extrabold">{homepage?.services_section_title || 'Services'}</h2>
         <a href={`/track/${PUBLIC_TRACKING_CODE}`} className="text-sm text-brand">Track Delivery</a>
       </div>
+
       {loading ? <LoadingCard /> : <ServiceCards services={services} />}
-      <section className="card flex items-center justify-between p-4 text-sm">
-        <p className="text-slate-300">Avg pickup 12 min | Nairobi coverage | 100% electric fleet</p>
+
+      <section className="card sticker-marquee-wrap p-3">
+        <div className="sticker-marquee-track">
+          {[...stickers, ...stickers].map((text, i) => (
+            <span key={`${text}-${i}`} className="badge sticker-chip">{text}</span>
+          ))}
+        </div>
       </section>
     </div>
   )
